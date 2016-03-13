@@ -14,6 +14,7 @@ from optparse import OptionParser
 import os
 import sys
 import types
+import imp
 
 # For checking callables against the API, & easy mocking
 from fabric import api, state, colors
@@ -101,6 +102,16 @@ def find_fabfile(names=None):
                 if name.endswith('.py') or _is_package(expanded):
                     return os.path.abspath(expanded)
     else:
+
+        #If fabfile is a module try to import it
+        try:
+            fabfile_module_name = names[0].replace('.py', '')
+            fabfile_module_info = imp.find_module('%s' %(fabfile_module_name))
+            fab_module = imp.load_module(fabfile_module_name, *fabfile_module_info)
+            return os.path.abspath(fab_module.__file__)
+        except ImportError:
+            pass
+
         # Otherwise, start in cwd and work downwards towards filesystem root
         path = '.'
         # Stop before falling off root of filesystem (should be platform
